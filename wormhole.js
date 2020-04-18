@@ -17,7 +17,7 @@ var ringVariance = 0.5;
 var ringSubdivs = 20;
 var tunnelSubdivs = 20;
 var curve;
-var colors = [0xffffff, 0xff0000];
+var colors = [0xff00ff, 0xffaa00];
 
 // Initialize shader code
 THREE.Cache.enabled = true;
@@ -82,25 +82,28 @@ var geometry, material, mesh;
 function generateWormhole() {
     if (count == 2) { // Vertex and fragment shaders successfully loaded
         let uniforms = {
-            uColorA: {type: 'vec3', value: new THREE.Color(colors[0])},
-            uColorB: {type: 'vec3', value: new THREE.Color(colors[1])}
+            // uColorA: {type: 'vec3', value: new THREE.Color(colors[0])},
+            // uColorB: {type: 'vec3', value: new THREE.Color(colors[1])}
         };
 
         // Generate and add vertices, normals, and indices to buffer
         geometry = new THREE.BufferGeometry();
         let tunnel = generateTunnel(ringDiameter, ringVariance, tunnelLength, tunnelSubdivs, ringSubdivs);
-        console.log("Tunnel and normals: ", tunnel);
+        console.log("Tunnel, normals, colors: ", tunnel);
         let vertices = new Float32Array(flatten(tunnel[0]));
         let normals = new Float32Array(flatten(tunnel[1]));
+        let colors_f32 = new Float32Array(flatten(tunnel[2]));
         geometry.setIndex(getIndices(tunnelSubdivs, ringSubdivs));
         geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
         geometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+        geometry.setAttribute('color', new THREE.BufferAttribute(colors_f32, 3));
 
         material = new THREE.ShaderMaterial({
             uniforms: uniforms,
             fragmentShader: fshader,
             vertexShader: vshader,
-            precision: "mediump"
+            precision: "mediump",
+            vertexColors: true
         });
         mesh = new THREE.Mesh(geometry, material);
         scene.add(mesh);
@@ -110,16 +113,39 @@ function generateWormhole() {
 // Generate wormhole vertices (tunnel)
 function generateTunnel(diameter, variance, length, subdivsL, subdivsR) {
     console.log("Forming tunnel with length ", length, " and ", subdivsL, " subdivisions.");
+    // Vertex, normal, and color arrays
     let tunnel = [];
     let normals = [];
+    let tColors = [];
+
+    // Z coordinate change per ring
     const deltaZ = length / subdivsL;
-    for (let i = 0; i <= subdivsL; ++i) {
+
+    // Discrete colors
+    const colorA = new THREE.Color(colors[0]);
+    const colorB = new THREE.Color(colors[1]);
+
+    // Color change per channel per ring
+    const deltaR = (colorA.r - colorB.r) / subdivsL;
+    const deltaG = (colorA.g - colorB.g) / subdivsL;
+    const deltaB = (colorA.b - colorB.b) / subdivsL;
+
+    for (let i = 0; i <= subdivsL; ++i) { // Each ring
+        // Get vertices and normals
         let ring = generateRing(diameter, variance, subdivsR, i * deltaZ);
         tunnel.push(ring[0]);
         normals.push(ring[1]);
+
+        // Set ring color
+        const newColor = new THREE.Color(colorA.r - (deltaR * i), colorA.g - (deltaG * i), colorA.b - (deltaB * i));
+        const newColorArr = []; // Color array to flatten and buffer
+        newColor.toArray(newColorArr);
+        for (let r = 0; r <= subdivsR; ++r) {
+            tColors.push(newColorArr);
+        }
     }
     console.log("Tunnel: ", tunnel);
-    return [tunnel, normals];
+    return [tunnel, normals, tColors]; // Composite array of vertices, normals, and colors of tunnel
 }
 
 // Generate tunnel ring
@@ -132,13 +158,13 @@ function generateRing(diameter, variance, subdivs, z) {
         //                 and random variance in specified range.
         //                 Necessary for coordinate calculation.
         const variantRadius = (diameter / 2) + ((2 * variance * Math.random()) - variance);
-        const angle = 2 * i * Math.PI / subdivs;
-        const x = Math.cos(angle);
-        const y = Math.sin(angle);
-        ring.push(x * variantRadius, y * variantRadius, z);
-        normals.push(x, y, z);
+        const angle = 2 * i * Math.PI / subdivs; // Angle at which vertex is placed
+        const x = Math.cos(angle);               // Normalized x component
+        const y = Math.sin(angle);               // Normalized y component
+        ring.push(x * variantRadius, y * variantRadius, z); // Push augmented x, y; Push z
+        normals.push(x, y, z);                   // Push normalized 
     }
-    return [ring, normals];
+    return [ring, normals]; // Composite array of vertices and normals.
 }
 
 // Compute tunnel indices
@@ -162,6 +188,8 @@ function getIndices(subdivsL, subdivsR) {
 }
 
 // Helper to flatten any given list
+// Good for preparing generated mesh for
+// buffering.
 flatten = list => list.flat(Infinity);
 
 // Initialize lighting

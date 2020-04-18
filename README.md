@@ -15,9 +15,9 @@ Draws a basic and buggy tunnel according to hard-coded constraints:
 - Tunnel Subdivisions
     - The number of edges along the tunnel (joining rings)
 - Colors
-    - A list of colors to interpolate across the tunnel
+    - A list of colors to interpolate across the tunnel (currently limeted to two)
 
-Currently in its first iteration. Next iteration should fix some generational issues and add shading. Auto-orbit is implemented for the time being.
+Currently in its second iteration. Next iteration should fix some generational issues and add phong shading. Orbit controls are currently implemented, with auto-orbit enabled.
 
 ### Known Issues
 
