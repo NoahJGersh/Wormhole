@@ -6,7 +6,18 @@ This wormhole is a personal project to explore parametric and procedural modelli
 
 ## Current Features
 
-Draws a white cube as a rendering basis.
+Draws a basic and buggy tunnel according to hard-coded constraints:
+- Diameter
+- Vertex Variance
+    - The distance a vertex is allowed to stray from the tunnel's center. Stays along its current angle.
+- Ring Subdivisions
+    - The number of edges around the tunnel (joining points)
+- Tunnel Subdivisions
+    - The number of edges along the tunnel (joining rings)
+- Colors
+    - A list of colors to interpolate across the tunnel
+
+Currently in its first iteration. Next iteration should fix some generational issues and add shading. Auto-orbit is implemented for the time being.
 
 ## Planned Features
 
@@ -34,7 +45,11 @@ Tunnel generation is set to follow certain user-specified constraints:
     - *Optional, no prerequisite.*
     - *Default:* White
 
-### Viewing Options
+### Shading Options
+
+User will be able to specify flat, gouraud, or phong shading.
+
+### Camera Options
 
 The camera is planned to have full view control including zooming, panning, and orbiting.
 
