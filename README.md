@@ -19,6 +19,10 @@ Draws a basic and buggy tunnel according to hard-coded constraints:
 
 Currently in its first iteration. Next iteration should fix some generational issues and add shading. Auto-orbit is implemented for the time being.
 
+### Known Issues
+
+Generated tunnel has rogue vertex in final ring.
+
 ## Planned Features
 
 ### Tunnel Generation
@@ -33,7 +37,7 @@ Tunnel generation is set to follow certain user-specified constraints:
 - Tunnel Subdivisions
     - The number of edges along the tunnel (joining rings)
 - Curve
-    - A parametric spline for the tunnel to follow
+    - A bezier curve for the tunnel to follow
     - *Optional, no prerequisite.*
     - *Default:* Z-axis
 - Curve Start
@@ -44,6 +48,12 @@ Tunnel generation is set to follow certain user-specified constraints:
     - A list of colors to interpolate across the tunnel
     - *Optional, no prerequisite.*
     - *Default:* White
+
+**Possible Addition:** I may restrict user parameters to have reasonable minimums:
+- Vertex Variance: At least 0.5 * diameter
+- Ring Subdivisions: At least 3
+- Tunnel Subdivisions: At least 2
+- Colors: At least one color
 
 ### Shading Options
 
