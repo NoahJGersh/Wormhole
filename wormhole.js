@@ -12,9 +12,9 @@
 
 // Tunnel parameters
 var tunnelLength = 20;
-var ringDiameter = 10;
-var ringVariance = 0.5;
-var ringSubdivs = 20;
+var ringDiameter = 40;
+var ringVariance = 1;
+var ringSubdivs = 200;
 var tunnelSubdivs = 20;
 var curve;
 var colors = [0xff00ff, 0xffaa00];
@@ -50,14 +50,15 @@ loader.load('shaders/fragmentShader.frag',
 
 // Initialize scene, camera
 var scene = new THREE.Scene();
-/*
+
 var camera = new THREE.PerspectiveCamera(75,
                                          window.innerWidth/window.innerHeight,
                                          0.1,
-                                         1000);*/
+                                         1000);
+/*
 var camera = new THREE.OrthographicCamera(window.innerWidth / -30, window.innerWidth / 30,
                                           window.innerHeight / -30, window.innerHeight / 30,
-                                          1, 1000);
+                                          1, 1000);*/
 var camAngle = Math.PI / -2;
 
 // Initialize renderer
@@ -66,8 +67,8 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
 // Camera controls
-camera.position.y = 20;
-camera.position.z = 0;
+camera.position.y = 50;
+camera.position.z = 25;
 camera.up.set(0, 0, 1);
 var orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
 orbitControls.keys = {
@@ -123,7 +124,8 @@ function generateTunnel(diameter, variance, length, subdivsL, subdivsR) {
     // Z coordinate change per ring
     const deltaZ = length / subdivsL;
 
-    // Discrete colors
+    // Get discrete colors
+    const threeColors = colors.map(color => new THREE.Color(color));
     const colorA = new THREE.Color(colors[0]);
     const colorB = new THREE.Color(colors[1]);
 
@@ -175,7 +177,7 @@ function getIndices(subdivsL, subdivsR) {
     let indices = [];
     for (let l = 0; l < subdivsL; ++l) {
         for (let r = 0; r < subdivsR; ++r) {
-            /* Diagram of poly. Add triangles ACB and BCD
+            /* Diagram of poly. Add triangles BCA and DCB
                 a---b
                 | / |
                 c---d
@@ -185,12 +187,10 @@ function getIndices(subdivsL, subdivsR) {
             const b = r !== subdivsR - 1 ? a + 1 : (a - (subdivsR - 1));
             const c = a + subdivsR;
             const d = b + subdivsR;
-            console.log("B: ", b);
-            indices.push(a, c, b);
-            indices.push(b, c, d);
+            indices.push(b, c, a);
+            indices.push(d, c, b);
         }
     }
-    console.log("Tunnel indices: ", indices);
     return indices;
 }
 
