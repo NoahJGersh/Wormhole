@@ -12,12 +12,14 @@
 
 // Tunnel parameters
 var tunnelLength = 20;
-var ringDiameter = 40;
+var ringDiameter = Math.min(20, 40 * Math.random());
 var ringVariance = 1;
-var ringSubdivs = 200;
-var tunnelSubdivs = 20;
+var ringSubdivs = Math.min(20, 200 * Math.random());
+var tunnelSubdivs = 200;
 var curve;
-var colors = [0xff00ff, 0xffaa00];
+var colors = [];
+// colors = [0xff0000, 0xffff00, 0x00ff00, 0x00ffff, 0x0000ff];
+for (let i = 0; i < 5; ++i) colors.push(0xffffff * Math.random());
 
 // Initialize shader code
 THREE.Cache.enabled = true;
@@ -125,14 +127,30 @@ function generateTunnel(diameter, variance, length, subdivsL, subdivsR) {
     const deltaZ = length / subdivsL;
 
     // Get discrete colors
-    const threeColors = colors.map(color => new THREE.Color(color));
-    const colorA = new THREE.Color(colors[0]);
-    const colorB = new THREE.Color(colors[1]);
+    let threeColors = colors.map(color => new THREE.Color(color));
+    const nColors = threeColors.length;
+    const divsPerColor = subdivsL / (nColors - 1);
+    console.log("There are ", nColors, " colors with ", divsPerColor, " divs each.");
 
     // Color change per channel per ring
-    const deltaR = (colorA.r - colorB.r) / subdivsL;
-    const deltaG = (colorA.g - colorB.g) / subdivsL;
-    const deltaB = (colorA.b - colorB.b) / subdivsL;
+    let deltaR = [];
+    let deltaG = [];
+    let deltaB = [];
+    if (nColors === 1) {
+        deltaR.push(0);
+        deltaG.push(0);
+        deltaB.push(0);
+    }
+    else {
+        for (let i = 0; i < nColors - 1; ++i) {
+            deltaR.push((threeColors[i].r - threeColors[i+1].r) / divsPerColor);
+            deltaG.push((threeColors[i].g - threeColors[i+1].g) / divsPerColor);
+            deltaB.push((threeColors[i].b - threeColors[i+1].b) / divsPerColor);
+        }
+    }
+
+    let colorDivsUsed = 0; // Number of divs that the current color has been applied to
+    let curColor = 0;      // Index of current color
 
     for (let i = 0; i <= subdivsL; ++i) { // Each ring
         // Get vertices and normals
@@ -141,12 +159,23 @@ function generateTunnel(diameter, variance, length, subdivsL, subdivsR) {
         normals.push(ring[1]);
 
         // Set ring color
-        const newColor = new THREE.Color(colorA.r - (deltaR * i), colorA.g - (deltaG * i), colorA.b - (deltaB * i));
+        console.log("Current color index: ", curColor);
+        const newColor = new THREE.Color(threeColors[curColor].r - (deltaR[curColor] * colorDivsUsed),
+                                         threeColors[curColor].g - (deltaG[curColor] * colorDivsUsed),
+                                         threeColors[curColor].b - (deltaB[curColor] * colorDivsUsed));
         const newColorArr = []; // Color array to flatten and buffer
         newColor.toArray(newColorArr);
         for (let r = 0; r <= subdivsR; ++r) {
             tColors.push(newColorArr);
         }
+
+        // Switch colors or continue with current
+        console.log("Used divs: ", colorDivsUsed, "\nDivs per color: ", divsPerColor);
+        if (colorDivsUsed + 1 > divsPerColor) {
+            ++curColor;
+            colorDivsUsed = 0;
+        }
+        else ++colorDivsUsed;
     }
     console.log("Tunnel: ", tunnel);
     return [tunnel, normals, tColors]; // Composite array of vertices, normals, and colors of tunnel
@@ -177,12 +206,12 @@ function getIndices(subdivsL, subdivsR) {
     let indices = [];
     for (let l = 0; l < subdivsL; ++l) {
         for (let r = 0; r < subdivsR; ++r) {
-            /* Diagram of poly. Add triangles BCA and DCB
+            /* 
+                Diagram of poly. Add triangles BCA and DCB
                 a---b
                 | / |
                 c---d
             */
-
             const a = (subdivsR * l) + r;
             const b = r !== subdivsR - 1 ? a + 1 : (a - (subdivsR - 1));
             const c = a + subdivsR;

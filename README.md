@@ -15,9 +15,10 @@ Draws a basic tunnel according to hard-coded constraints:
 - Tunnel Subdivisions
     - The number of edges along the tunnel (joining rings)
 - Colors
-    - A list of colors to interpolate across the tunnel (currently limited to two)
+    - A list of colors to interpolate across the tunnel
 
-Currently in its third iteration. Next iteration will add proper shading. Orbit controls are currently implemented, with auto-orbit enabled.
+Currently in its third iteration. Orbit controls are currently implemented, with auto-orbit enabled.
+Tunnel colors are randomized, with 5 evenly spaced across the model.
 
 ### Known Issues
 
