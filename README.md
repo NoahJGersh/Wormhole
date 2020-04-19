@@ -6,7 +6,7 @@ This wormhole is a personal project to explore parametric and procedural modelli
 
 ## Current Features
 
-Draws a basic and buggy tunnel according to hard-coded constraints:
+Draws a basic tunnel according to hard-coded constraints:
 - Diameter
 - Vertex Variance
     - The distance a vertex is allowed to stray from the tunnel's center. Stays along its current angle.
@@ -15,13 +15,13 @@ Draws a basic and buggy tunnel according to hard-coded constraints:
 - Tunnel Subdivisions
     - The number of edges along the tunnel (joining rings)
 - Colors
-    - A list of colors to interpolate across the tunnel (currently limeted to two)
+    - A list of colors to interpolate across the tunnel (currently limited to two)
 
-Currently in its second iteration. Next iteration should fix some generational issues and add phong shading. Orbit controls are currently implemented, with auto-orbit enabled.
+Currently in its third iteration. Next iteration will add proper shading. Orbit controls are currently implemented, with auto-orbit enabled.
 
 ### Known Issues
 
-Generated tunnel has rogue vertex in final ring.
+None.
 
 ## Planned Features
 
