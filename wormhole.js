@@ -24,6 +24,7 @@ THREE.Cache.enabled = true;
 var count = 0;
 var loader = new THREE.FileLoader();
 var fshader, vshader;
+var wireframe = false; // Render with GL_LINES?
 
 // Vertex shader
 loader.load('shaders/vertexShader.vert',
@@ -103,7 +104,8 @@ function generateWormhole() {
             fragmentShader: fshader,
             vertexShader: vshader,
             precision: "mediump",
-            vertexColors: true
+            vertexColors: true,
+            wireframe: wireframe
         });
         mesh = new THREE.Mesh(geometry, material);
         scene.add(mesh);
@@ -153,7 +155,7 @@ function generateRing(diameter, variance, subdivs, z) {
     console.log("Forming ring with diameter ", diameter, ", variance ", variance, " and ", subdivs, " subdivisions.");
     let ring = [];
     let normals = [];
-    for (let i = 0; i <= subdivs; ++i) {
+    for (let i = 0; i < subdivs; ++i) {
         // Variant radius: combined radius of ring given diameter
         //                 and random variance in specified range.
         //                 Necessary for coordinate calculation.
@@ -172,15 +174,20 @@ function getIndices(subdivsL, subdivsR) {
     console.log("Getting tunnel indices.");
     let indices = [];
     for (let l = 0; l < subdivsL; ++l) {
-        for (let r = 1; r <= subdivsR; ++r) {
-            // const a = ((subdivsR + 1) * l) + r;
-            // const b = subdivsR + a + 1;
+        for (let r = 0; r < subdivsR; ++r) {
+            /* Diagram of poly. Add triangles ACB and BCD
+                a---b
+                | / |
+                c---d
+            */
+
             const a = (subdivsR * l) + r;
-            const b = a + subdivsR;
-            const c = (a + 1) % subdivsR == 1 ? a - subdivsR + 1 : a + 1;
-            const d = c < a ? a + 1 : b + 1;
-            indices.push(a, b, c);
-            indices.push(c, b, d);
+            const b = r !== subdivsR - 1 ? a + 1 : (a - (subdivsR - 1));
+            const c = a + subdivsR;
+            const d = b + subdivsR;
+            console.log("B: ", b);
+            indices.push(a, c, b);
+            indices.push(b, c, d);
         }
     }
     console.log("Tunnel indices: ", indices);
