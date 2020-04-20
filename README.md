@@ -6,18 +6,28 @@ This wormhole is a personal project to explore parametric and procedural modelli
 
 ## Current Features
 
-Draws a large tunnel **(read: intensive)** according to hard-coded constraints:
-- Diameter (40)
-- Vertex Variance (0.1)
-    - The distance a vertex is allowed to stray from the tunnel's center. Stays along its current angle.
-- Ring Subdivisions (1000)
-    - The number of edges around the tunnel (joining points)
-- Tunnel Subdivisions (1000)
-    - The number of edges along the tunnel (joining rings)
-- Colors
+Draws a tunnel along the Z-axis, with user-specified parameters:
+- Length (*default: 200*)
+    - The total length of the tunnel.
+    - *Minimum: 1*
+- Diameter (*default: 40*)
+    - The approximate diameter of each ring.
+    - *Minimum: 1*
+- Vertex Variance (*default: 0.1*)
+    - The distance a vertex is allowed to stray from the ring. Stays along its current angle.
+    - *Maximum: diameter / 2*
+- Ring Polys (*default: 200*)
+    - The number of quads in a ring.
+    - *Minimum: 3*
+- Rings (*default: 200*)
+    - The number of rings of quads along the tunnel.
+    - *Minimum: 1*
+
+The following additional tunnel parameters are hard-coded for the time being:
+- Colors (*default: magenta, black*)
     - A list of colors to interpolate across the tunnel
 
-User has some options:
+The user is granted the additional viewing options:
 - Camera selection
     - Access to an orthographic camera and a perspective camera, which are uniquely modifiable.
 - Draw selection
@@ -26,9 +36,11 @@ User has some options:
     - Toggle between per-vertex color and colorless (white only) drawing.
 - Rotation toggle
     - Toggle automatic model rotation.
+- Axis
+    - A vector supplying an axis for the model rotation.
 
-Currently in its fourth iteration. Orbit controls are currently implemented, granting orbit, pan, and zoom capabilities for either camera. Model rotates by default.
-Tunnel colors are randomized, with 2 interpolated across the length.
+Currently in its fifth major iteration. Orbit controls are currently implemented, granting orbit, pan, and zoom capabilities for either camera. Model rotates by default, but can be toggled.
+Tunnel colors are set, with magenta and black interpolated across the length.
 
 ### Known Issues
 
@@ -38,15 +50,7 @@ None.
 
 ### Tunnel Generation
 
-Tunnel generation is set to follow certain user-specified constraints:
-- Length
-- Diameter
-- Vertex Variance
-    - The distance a vertex is allowed to stray from the tunnel's center. Stays along its current angle.
-- Ring Subdivisions
-    - The number of edges around the tunnel (joining points)
-- Tunnel Subdivisions
-    - The number of bands along the tunnel (joining rings)
+Tunnel generation is set to follow these additional user-specified constraints: (NYI)
 - Curve
     - A bezier curve for the tunnel to follow
     - *Optional, no prerequisite.*
@@ -55,16 +59,12 @@ Tunnel generation is set to follow certain user-specified constraints:
     - The position along the curve to start generating from
     - *Optional, requires:* Curve
     - *Default:* Origin
+
+The following user-specified constraints are implemented, but not yet interactive:
 - Colors
     - A list of colors to interpolate across the tunnel
     - *Optional, no prerequisite.*
     - *Default:* White
-
-**Possible Addition:** I may restrict user parameters to have reasonable minimums:
-- Vertex Variance: At least 0.5 * diameter
-- Ring Subdivisions: At least 3
-- Tunnel Subdivisions: At least 2
-- Colors: At least one color
 
 ### Shading Options
 

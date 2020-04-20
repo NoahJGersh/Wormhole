@@ -69,6 +69,13 @@ input:checked + .slider:before {
     transform: translateX(26px);
 }
 
+input[type=text] {
+    width: 5em;
+    outline: none;
+    border: none;
+    margin-left: 1em;
+}
+
 .slider.round {
     border-radius: 34px;
 }

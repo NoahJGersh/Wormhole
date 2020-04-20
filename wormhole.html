@@ -15,6 +15,38 @@
                     <p>Noah Gersh</p>
                     <p>me@noahger.sh</p>
                 </div>
+                <br>
+                <h4><==***Parameters***==></h4>
+                <div id="length" class="option" title="Length of tunnel.
+Minimum is 1.">
+                    <h4>Length:</h4>
+                    <input id="lengthValue" type="text" value="200" onchange="onLengthUpdate()">
+                </div>
+                <div id="diameter" class="option" title="Diameter of tunnel.
+Minimum is 1.">
+                    <h4>Diameter:</h4>
+                    <input id="diameterValue" type="text" value="40" onchange="onDiameterUpdate()">
+                </div>
+                <div id="variance" class="option" title="Variance of vertices from ideal coordinates.
+Vertices will be plotted either inside or outside
+their ideal location, up to the variance away.
+Vertices maintain their angle from center, and Z.
+Maximum is 0.5 * diameter.">
+                    <h4>Variance:</h4>
+                    <input id="varianceValue" type="text" value="0.1" onchange="onVarianceUpdate()">
+                </div>
+                <div id="subdivsR" class="option" title="Subdivisions per ring.
+Minimum is 3. (Triangular prism)">
+                    <h4>Ring Polys:</h4>
+                    <input id="subdivsRValue" type="text" value="200" onchange="onSubdivsRUpdate()">
+                </div>
+                <div id="subdivsL" class="option" title="Rings of polys per tunnel.
+Minimum is 1.">
+                    <h4>Rings:</h4>
+                    <input id="subdivsLValue" type="text" value="200" onchange="onSubdivsLUpdate()">
+                </div>
+                <br>
+                <h4>~@ Viewing Options ~@</h4>
                 <div id="ortho" class="option" title="Toggle between orthographic and perspective cameras">
                     <h4>Ortho</h4>
                     <div style="justify-self: flex-end">
@@ -50,6 +82,12 @@
                             <span class="slider round"></span>
                         </label>
                     </div>
+                </div>
+                <div id="axis" class="option" title="Specify axis upon which to rotate.
+Must be a comma separated list enclosed with parentheses.
+e.g. (x, y, z)">
+                    <h4>Axis:</h4>
+                    <input id="axisValue" type="text" value="(0, 0, 1)" onchange="onUpdateAxis()">
                 </div>
             </div>
             <div id="view" style="width: 100%; height: 100%; flex-shrink: 1"></div>

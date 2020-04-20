@@ -7,23 +7,30 @@
  * even more customizable in the future.
  *
  * Started:      2020-04-17
- * Last updated: 2020-04-19
+ * Last updated: 2020-04-20
  */
 
 // Tunnel parameters
 var tunnelLength = 200;
 var ringDiameter = 40;
 var ringVariance = 0.1;
-var ringSubdivs = 1000;
-var tunnelSubdivs = 1000;
+var ringSubdivs = 200;
+var tunnelSubdivs = 200;
 var curve;
 var colors = [];
-// colors = [0xff0000, 0xffff00, 0x00ff00, 0x00ffff, 0x0000ff];
-for (let i = 0; i < 2; ++i) colors.push(0xffffff * Math.random());
+colors = [0xff00ff, 0x000000];
+// for (let i = 0; i < 2; ++i) colors.push(0xffffff * Math.random());
 
 // Tunnel things before graphics things.
-var tunnel = generateTunnel(ringDiameter, ringVariance, tunnelLength, tunnelSubdivs, ringSubdivs);
-var indices = getIndices(tunnelSubdivs, ringSubdivs);
+var tunnel = [];
+var indices = [];
+
+// Rebuild new basis for mesh from parameters
+function buildBasis() {
+    tunnel = generateTunnel(ringDiameter, ringVariance, tunnelLength, tunnelSubdivs, ringSubdivs);
+    indices = getIndices(tunnelSubdivs, ringSubdivs);
+}
+buildBasis(); // Build default values
 
 // Initialize shader code
 THREE.Cache.enabled = true;
@@ -82,8 +89,8 @@ var oCamera = new THREE.OrthographicCamera(boundary.width / -20, boundary.width 
 var isCamOrtho = false;
 
 // Camera controls
-pCamera.position.y = 50;
-pCamera.position.z = 25;
+pCamera.position.y = 40;
+pCamera.position.z = 20;
 oCamera.position.y = 30;
 oCamera.position.z = 5;
 pCamera.up.set(0, 0, 1);
@@ -143,7 +150,8 @@ function generateWormhole() {
     }
 }
 
-function generate() {
+function generate(level = "lite") {
+    if (level == "full") buildBasis();
     if (meshDefined) {  // If mesh defined, store location data and remove from scene
         meshPRS = [mesh.position, mesh.rotation, mesh.scale];
         meshDefined = false;
@@ -270,7 +278,7 @@ scene.add(light);
 
 // Rotation trackers for auto-rotate
 var rotateModel = true;
-var rotationVector = new THREE.Vector3(1, -1, 1);
+var rotationVector = new THREE.Vector3(0, 0, 1);
 rotationVector.normalize();
 var curAngle = 0.0;
 
@@ -280,6 +288,7 @@ function animate() {
 
     if (meshDefined) {
         // Ensure mesh in correct rotation
+        // mesh.position.z = 0 - tunnelLength / 2;
         mesh.setRotationFromAxisAngle(rotationVector, curAngle);
         if (rotateModel) {
             // Increment angle and set new rotation
@@ -295,6 +304,52 @@ animate();
 /*
  * Event handlers
  */
+
+// Input tunnel length
+function onLengthUpdate() {
+    let lengthValue = document.getElementById("lengthValue");
+    const fValue = Math.max(1, parseFloat(lengthValue.value));
+    if (fValue == 1) lengthValue.value = "1";
+    tunnelLength = fValue;
+    generate("full");
+}
+
+// Input tunnel diameter
+function onDiameterUpdate() {
+    let diameterValue = document.getElementById("diameterValue");
+    const fValue = Math.max(1, parseFloat(diameterValue.value));
+    diameterValue.value = "" + fValue;
+    ringDiameter = fValue;
+    generate("full");
+}
+
+// Input vertex variance
+function onVarianceUpdate() {
+    let varianceValue = document.getElementById("varianceValue");
+    const maximum = ringDiameter / 2;
+    const fValue = Math.min(maximum, parseFloat(varianceValue.value));
+    varianceValue.value = "" + fValue;
+    ringVariance = fValue;
+    generate("full");
+}
+
+// Input ring subdivisions
+function onSubdivsRUpdate() {
+    let subdivsValue = document.getElementById("subdivsRValue");
+    const fValue = Math.max(3, parseInt(subdivsValue.value));
+    subdivsRValue.value = "" + fValue;
+    ringSubdivs = fValue;
+    generate("full");
+}
+
+// Input tunnel subdivisions
+function onSubdivsLUpdate() {
+    let subdivsValue = document.getElementById("subdivsLValue");
+    const fValue = Math.max(1, parseInt(subdivsValue.value));
+    subdivsLValue.value = "" + fValue;
+    tunnelSubdivs = fValue;
+    generate("full");
+}
 
 // Toggle between ortho and persp cameras
 function onCameraToggle() {
@@ -335,6 +390,17 @@ function onVColorToggle() {
 function onRotateToggle() {
     let rotateValue = document.getElementById("rotateValue");
     rotateModel = rotateValue.checked;
+}
+
+// Update axis for auto-rotation
+function onUpdateAxis() {
+    let axisValue = document.getElementById("axisValue").value;
+    let format = /\((?<x>-?\d+\.?\d*),\s(?<y>-?\d+\.?\d*),\s(?<z>-?\d+\.?\d*)\)/;
+    if (!format.test(axisValue)) return;
+    let matches = format.exec(axisValue);
+    let newAxis = new THREE.Vector3(parseFloat(matches.groups.x), parseFloat(matches.groups.y), parseFloat(matches.groups.z));
+    newAxis.normalize();
+    rotationVector = newAxis;
 }
 
 // Resize renderer to window on window size change
