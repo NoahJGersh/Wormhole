@@ -45,7 +45,7 @@ function loadShaders(set) {
         data => {
             vshader = data;
             ++count;
-            regenerate();
+            generate();
         },
         xhr => console.log((xhr.loaded/xhr.total * 100) + '% loaded'),
         err => console.error('An error occurred'));
@@ -56,7 +56,7 @@ function loadShaders(set) {
             console.log(data);
             fshader = data;
             ++count;
-            regenerate();
+            generate();
         },
         xhr => console.log((xhr.loaded/xhr.total * 100) + '% loaded'),
         err => console.error('An error occurred'));
@@ -99,21 +99,15 @@ orbitControls.keys = {
 }
 orbitControls.autoRotate = false;
 
-// Generate wormhole object
+// Mesh status and trackers
 var geometry, material, mesh;
-var meshDefined = false;
-var meshPRS = [];
-// console.log("Tunnel, normals, colors: ", tunnel);
+var meshDefined = false;      // Has mesh been created yet?
+var meshPRS = [];             // Position, Rotation, and Scale
 
 // Buffer tunnel into shader programs
 function generateWormhole() {
     console.log("Shader count: ", count);
     if (count == 2) { // Vertex and fragment shaders successfully loaded
-        let uniforms = {
-            // uColorA: {type: 'vec3', value: new THREE.Color(colors[0])},
-            // uColorB: {type: 'vec3', value: new THREE.Color(colors[1])}
-        };
-
         // Add vertices, normals, and indices to buffer
         geometry = new THREE.BufferGeometry();
         let vertices_f32 = new Float32Array(flatten(tunnel[0]));
@@ -124,6 +118,7 @@ function generateWormhole() {
         geometry.setAttribute('normal',   new THREE.BufferAttribute(normals_f32,  3));
         if (useVColors) geometry.setAttribute('color', new THREE.BufferAttribute(colors_f32, 3));
 
+        // Initialize Shader Material
         material = new THREE.ShaderMaterial({
             fragmentShader: fshader,
             vertexShader: vshader,
@@ -132,30 +127,29 @@ function generateWormhole() {
             wireframe: useWireframe
         });
 
+        // Instantiate mesh
         mesh = new THREE.Mesh(geometry, material);
 
-        // TODO: Load in saved pos/rot/scale
+        // Load any stored location data
         if (meshPRS.length > 0) {
-            console.log(meshPRS);
             mesh.position = meshPRS[0];
             mesh.rotation = meshPRS[1];
             mesh.scale    = meshPRS[2];
         }
 
-        console.log(mesh.rotation);
+        // Add final mesh to scene
         scene.add(mesh);
-        console.log(mesh.rotation);
         meshDefined = true;
     }
 }
 
-function regenerate() {
-    if (meshDefined) {
+function generate() {
+    if (meshDefined) {  // If mesh defined, store location data and remove from scene
         meshPRS = [mesh.position, mesh.rotation, mesh.scale];
         meshDefined = false;
         scene.remove(mesh);
     }
-    generateWormhole();
+    generateWormhole(); // Generate new mesh
 }
 
 // Parametrically generate tunnel vertices, normals, and colors
@@ -206,8 +200,8 @@ function generateTunnel(diameter, variance, length, subdivsL, subdivsR) {
                                          threeColors[curColor].b - (deltaB[curColor] * colorDivsUsed));
         const newColorArr = []; // Color array to flatten and buffer
         newColor.toArray(newColorArr);
-        for (let r = 0; r <= subdivsR; ++r) {
-            tColors.push(newColorArr);
+        for (let r = 0; r < subdivsR; ++r) {
+            tColors.push(newColorArr); // Push adjusted color to each vertex of ring
         }
 
         // Switch colors or continue with current
@@ -217,13 +211,12 @@ function generateTunnel(diameter, variance, length, subdivsL, subdivsR) {
         }
         else ++colorDivsUsed;
     }
-    // console.log("Tunnel: ", tunnel);
+
     return [tunnel, normals, tColors]; // Composite array of vertices, normals, and colors of tunnel
 }
 
 // Generate tunnel ring
 function generateRing(diameter, variance, subdivs, z) {
-    // console.log("Forming ring with diameter ", diameter, ", variance ", variance, " and ", subdivs, " subdivisions.");
     let ring = [];
     let normals = [];
     for (let i = 0; i < subdivs; ++i) {
@@ -242,7 +235,6 @@ function generateRing(diameter, variance, subdivs, z) {
 
 // Compute tunnel indices
 function getIndices(subdivsL, subdivsR) {
-    console.log("Getting tunnel indices.");
     let indices = [];
     for (let l = 0; l < subdivsL; ++l) {
         for (let r = 0; r < subdivsR; ++r) {
@@ -276,17 +268,21 @@ var light = new THREE.PointLight(0xffffff, 1, 1000);
 light.position.set(10, 10, 10);
 scene.add(light);
 
-// Animate
+// Rotation trackers for auto-rotate
 var rotateModel = true;
 var rotationVector = new THREE.Vector3(1, -1, 1);
 rotationVector.normalize();
 var curAngle = 0.0;
+
+// Animate scene
 function animate() {
     requestAnimationFrame(animate);
 
     if (meshDefined) {
+        // Ensure mesh in correct rotation
         mesh.setRotationFromAxisAngle(rotationVector, curAngle);
         if (rotateModel) {
+            // Increment angle and set new rotation
             curAngle += 0.001;
             mesh.setRotationFromAxisAngle(rotationVector, curAngle);
         }
@@ -296,7 +292,11 @@ function animate() {
 }
 animate();
 
-// Event handlers
+/*
+ * Event handlers
+ */
+
+// Toggle between ortho and persp cameras
 function onCameraToggle() {
     let orthoValue = document.getElementById("orthoValue");
     isCamOrtho = orthoValue.checked;
@@ -304,6 +304,7 @@ function onCameraToggle() {
     resetControls();
 }
 
+// Update orbit controls to current camera
 function resetControls() {
     orbitControls = new THREE.OrbitControls(curCamera, renderer.domElement);
     orbitControls.keys = {
@@ -315,12 +316,14 @@ function resetControls() {
     orbitControls.autoRotate = false;
 }
 
+// Toggle between shading and wireframe
 function onWireframeToggle() {
     let wireframeValue = document.getElementById("wireframeValue");
     useWireframe = wireframeValue.checked;
-    regenerate();
+    generate();
 }
 
+// Toggle between current color shader and colorless shader
 function onVColorToggle() {
     let vColorValue = document.getElementById("vColorValue");
     useVColors = vColorValue.checked;
@@ -328,14 +331,16 @@ function onVColorToggle() {
     else loadShaders(0);
 }
 
+// Toggle auto-rotation of model
 function onRotateToggle() {
     let rotateValue = document.getElementById("rotateValue");
     rotateModel = rotateValue.checked;
 }
 
+// Resize renderer to window on window size change
 function onResize() {
     boundary = container.getBoundingClientRect();
     renderer.setSize(boundary.width, boundary.height);
-    camera.aspect = boundary.width / boundary.height;
-    camera.updateProjectionMatrix();
+    curCamera.aspect = boundary.width / boundary.height;
+    curCamera.updateProjectionMatrix();
 }
