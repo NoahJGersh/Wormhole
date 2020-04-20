@@ -6,19 +6,29 @@ This wormhole is a personal project to explore parametric and procedural modelli
 
 ## Current Features
 
-Draws a basic tunnel according to hard-coded constraints:
-- Diameter
-- Vertex Variance
+Draws a large tunnel **(read: intensive)** according to hard-coded constraints:
+- Diameter (40)
+- Vertex Variance (0.1)
     - The distance a vertex is allowed to stray from the tunnel's center. Stays along its current angle.
-- Ring Subdivisions
+- Ring Subdivisions (1000)
     - The number of edges around the tunnel (joining points)
-- Tunnel Subdivisions
+- Tunnel Subdivisions (1000)
     - The number of edges along the tunnel (joining rings)
 - Colors
     - A list of colors to interpolate across the tunnel
 
-Currently in its third iteration. Orbit controls are currently implemented, with auto-orbit enabled.
-Tunnel colors are randomized, with 5 evenly spaced across the model.
+User has some options:
+- Camera selection
+    - Access to an orthographic camera and a perspective camera, which are uniquely modifiable.
+- Draw selection
+    - Toggle between wireframe and triangle draw methods.
+- Color toggle
+    - Toggle between per-vertex color and colorless (white only) drawing.
+- Rotation toggle
+    - Toggle automatic model rotation.
+
+Currently in its fourth iteration. Orbit controls are currently implemented, granting orbit, pan, and zoom capabilities for either camera. Model rotates by default.
+Tunnel colors are randomized, with 2 interpolated across the length.
 
 ### Known Issues
 
@@ -36,7 +46,7 @@ Tunnel generation is set to follow certain user-specified constraints:
 - Ring Subdivisions
     - The number of edges around the tunnel (joining points)
 - Tunnel Subdivisions
-    - The number of edges along the tunnel (joining rings)
+    - The number of bands along the tunnel (joining rings)
 - Curve
     - A bezier curve for the tunnel to follow
     - *Optional, no prerequisite.*
@@ -59,10 +69,6 @@ Tunnel generation is set to follow certain user-specified constraints:
 ### Shading Options
 
 User will be able to specify flat, gouraud, or phong shading.
-
-### Camera Options
-
-The camera is planned to have full view control including zooming, panning, and orbiting.
 
 ### Animation
 

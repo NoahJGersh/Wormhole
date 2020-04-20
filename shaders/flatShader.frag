@@ -5,7 +5,7 @@
  * Flat shading.
  *
  * Started: 2020-04-17
- * Updated: 2020-04-18
+ * Updated: 2020-04-19
  */
 
 varying vec3 vCol;

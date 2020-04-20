@@ -3,14 +3,57 @@
     <head>
         <meta charset="utf-8">
         <title>Wormhole</title>
-        <style>
-            body {margin: 0;}
-            canvas {display: block;}
-        </style>
+        <link rel="stylesheet" href="style.css">
     </head>
-    <body>
+    <body onresize="onResize()">
         <script src="three.js-master/build/three.js"></script>
         <script src="three.js-master/examples/js/controls/OrbitControls.js"></script>
+        <div id="main" style="display: flex; width: 100vw; height: 100vh; flex-wrap: nowrap; flex-direction: row;">
+            <div id="parameters" class="container" style="flex-direction: column; align-items: center; justify-content: all;">
+                <h1 style="margin: 5px">Wormhole</h1>
+                <div class="container" style="flex-direction: column; align-items: center; justify-content: flex-end;">
+                    <p>Noah Gersh</p>
+                    <p>me@noahger.sh</p>
+                </div>
+                <div id="ortho" class="option" title="Toggle between orthographic and perspective cameras">
+                    <h4>Ortho</h4>
+                    <div style="justify-self: flex-end">
+                        <label id="orthoToggle" class="switch" onchange="onCameraToggle()">
+                            <input id="orthoValue" type="checkbox">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
+                <div id="wireframe" class="option" title="Toggle between wireframe and shaded">
+                    <h4>Wire</h4>
+                    <div style="justify-self: flex-end">
+                        <label id="wireframeToggle" class="switch" onchange="onWireframeToggle()">
+                            <input id="wireframeValue" type="checkbox">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
+                <div id="vColors" class="option" title="Toggle vertex coloring on and off">
+                    <h4>Vertex Colors</h4>
+                    <div style="justify-self: flex-end">
+                        <label id="vColorToggle" class="switch" onchange="onVColorToggle()">
+                            <input id="vColorValue" type="checkbox" checked="true">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
+                <div id="rotate" class="option" title="Toggle model auto-rotation">
+                    <h4>Auto Rotate</h4>
+                    <div style="justify-self: flex-end">
+                        <label id="rotateToggle" class="switch" onchange="onRotateToggle()">
+                            <input id="rotateValue" type="checkbox" checked="true">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div id="view" style="width: 100%; height: 100%; flex-shrink: 1"></div>
+        </div>
         <script src="wormhole.js"></script>
     </body>
 </html>
