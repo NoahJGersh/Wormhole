@@ -16,6 +16,25 @@
     width: 90%;
 }
 
+.areainput {
+    margin-left: 1em;
+    margin-right: 1em;
+    width: 15em;
+    height: 3em;
+    outline: none;
+    border: none;
+    resize: none;
+}
+
+.areabutton {
+    font-family: 'Fira Code';
+    outline: none;
+    border: none;
+    margin: 5px;
+    color: white;
+    background-color: #2196f3: 
+}
+
 .switch {
     position: relative;
     display: inline-block;

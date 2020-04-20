@@ -1,5 +1,5 @@
-// Wormhole -- wormhole.js
-/* Noah Gersh - me@noahger.sh
+/* Wormhole -- wormhole.js
+ * Noah Gersh - me@noahger.sh
  * 
  * Generates and renders a "wormhole".
  * Wormhole is based on user-specified
@@ -10,27 +10,45 @@
  * Last updated: 2020-04-20
  */
 
-// Tunnel parameters
-var tunnelLength = 200;
-var ringDiameter = 40;
-var ringVariance = 0.1;
-var ringSubdivs = 200;
-var tunnelSubdivs = 200;
-var curve;
-var colors = [];
-colors = [0xff00ff, 0x000000];
-// for (let i = 0; i < 2; ++i) colors.push(0xffffff * Math.random());
 
-// Tunnel things before graphics things.
+/*
+ *  Tunnel value initialization
+ */
+
+// Tunnel parameters
+var tunnelLength = 200;   // Length
+var ringDiameter = 40;    // Initial diameter
+var finalDiameter = 40;   // End diameter
+var deltaDiameter = 0;    // Change in diameter per ring
+var currentDiameter = 40; // Diameter stored for current ring
+var ringVariance = 0.1;   // Distance a vertex may be plotted away. Random in range [-variance, variance]
+var ringSubdivs = 200;    // Number of polys per ring
+var tunnelSubdivs = 200;  // Number of bands across tunnel
+var curve;                // Bezier curve to follow
+var colors = [];          // List of colors to interpolate
+colors = [0xff00ff, 0x000000];
+
+// Establish tunnel lists.
 var tunnel = [];
+var tColors = generateColors(tunnelLength, tunnelSubdivs, ringSubdivs, colors);
 var indices = [];
 
 // Rebuild new basis for mesh from parameters
-function buildBasis() {
-    tunnel = generateTunnel(ringDiameter, ringVariance, tunnelLength, tunnelSubdivs, ringSubdivs);
-    indices = getIndices(tunnelSubdivs, ringSubdivs);
+function buildBasis(level) {
+    if (level === "full") {
+        tunnel = generateTunnel(ringDiameter, ringVariance, tunnelLength, tunnelSubdivs, ringSubdivs);
+        indices = getIndices(tunnelSubdivs, ringSubdivs);
+        tColors = generateColors(tunnelLength, tunnelSubdivs, ringSubdivs, colors);
+    }
+    else if (level === "colors") tColors = generateColors(tunnelLength, tunnelSubdivs, ringSubdivs, colors);
 }
-buildBasis(); // Build default values
+buildBasis("full"); // Build default values
+
+
+/*
+ *   Rendering setup
+ */
+
 
 // Initialize shader code
 THREE.Cache.enabled = true;
@@ -106,10 +124,27 @@ orbitControls.keys = {
 }
 orbitControls.autoRotate = false;
 
+
+/*
+ *  Mesh Generation
+ */
+
+
 // Mesh status and trackers
 var geometry, material, mesh;
 var meshDefined = false;      // Has mesh been created yet?
 var meshPRS = [];             // Position, Rotation, and Scale
+
+// Build, or rebuild, wormhole
+function generate(level = "") {
+    if (level.length > 0) buildBasis(level); // If using basis options, rebuild basis values
+    if (meshDefined) {                       // If mesh already defined, store location data and remove from scene
+        meshPRS = [mesh.position, mesh.rotation, mesh.scale];
+        meshDefined = false;
+        scene.remove(mesh);
+    }
+    generateWormhole(); // Generate new mesh
+}
 
 // Buffer tunnel into shader programs
 function generateWormhole() {
@@ -119,7 +154,7 @@ function generateWormhole() {
         geometry = new THREE.BufferGeometry();
         let vertices_f32 = new Float32Array(flatten(tunnel[0]));
         let normals_f32 =  new Float32Array(flatten(tunnel[1]));
-        let colors_f32 =   new Float32Array(flatten(tunnel[2]));
+        let colors_f32 =   new Float32Array(flatten(tColors));
         geometry.setIndex(indices);
         geometry.setAttribute('position', new THREE.BufferAttribute(vertices_f32, 3));
         geometry.setAttribute('normal',   new THREE.BufferAttribute(normals_f32,  3));
@@ -150,77 +185,26 @@ function generateWormhole() {
     }
 }
 
-function generate(level = "lite") {
-    if (level == "full") buildBasis();
-    if (meshDefined) {  // If mesh defined, store location data and remove from scene
-        meshPRS = [mesh.position, mesh.rotation, mesh.scale];
-        meshDefined = false;
-        scene.remove(mesh);
-    }
-    generateWormhole(); // Generate new mesh
-}
-
-// Parametrically generate tunnel vertices, normals, and colors
+// Parametrically generate tunnel vertices and normals
 function generateTunnel(diameter, variance, length, subdivsL, subdivsR) {
     // console.log("Forming tunnel with length ", length, " and ", subdivsL, " subdivisions.");
     // Vertex, normal, and color arrays
     let tunnel = [];
     let normals = [];
-    let tColors = [];
 
     // Z coordinate change per ring
     const deltaZ = length / subdivsL;
 
-    // Get discrete colors
-    let threeColors = colors.map(color => new THREE.Color(color));
-    const nColors = threeColors.length;
-    const divsPerColor = subdivsL / (nColors - 1);
-
-    // Color change per channel per ring
-    let deltaR = [];
-    let deltaG = [];
-    let deltaB = [];
-    if (nColors === 1) {
-        deltaR.push(0);
-        deltaG.push(0);
-        deltaB.push(0);
-    }
-    else {
-        for (let i = 0; i < nColors - 1; ++i) {
-            deltaR.push((threeColors[i].r - threeColors[i+1].r) / divsPerColor);
-            deltaG.push((threeColors[i].g - threeColors[i+1].g) / divsPerColor);
-            deltaB.push((threeColors[i].b - threeColors[i+1].b) / divsPerColor);
-        }
-    }
-
-    let colorDivsUsed = 0; // Number of divs that the current color has been applied to
-    let curColor = 0;      // Index of current color
-
+    currentDiameter = ringDiameter;
     for (let i = 0; i <= subdivsL; ++i) { // Each ring
         // Get vertices and normals
-        let ring = generateRing(diameter, variance, subdivsR, i * deltaZ);
+        let ring = generateRing(currentDiameter, variance, subdivsR, i * deltaZ);
+        currentDiameter += deltaDiameter;
         tunnel.push(ring[0]);
         normals.push(ring[1]);
-
-        // Set ring color
-        const newColor = new THREE.Color(threeColors[curColor].r - (deltaR[curColor] * colorDivsUsed),
-                                         threeColors[curColor].g - (deltaG[curColor] * colorDivsUsed),
-                                         threeColors[curColor].b - (deltaB[curColor] * colorDivsUsed));
-        const newColorArr = []; // Color array to flatten and buffer
-        newColor.toArray(newColorArr);
-        for (let r = 0; r < subdivsR; ++r) {
-            tColors.push(newColorArr); // Push adjusted color to each vertex of ring
-        }
-
-        // Switch colors or continue with current
-        if (colorDivsUsed + 1 > divsPerColor) {
-            ++curColor;
-            colorDivsUsed = 0;
-        }
-        else ++colorDivsUsed;
     }
 
-    return [tunnel, normals, tColors]; // Composite array of vertices, normals, and colors of tunnel
+    return [tunnel, normals]; // Composite array of vertices, normals, and colors of tunnel
 }
 
 // Generate tunnel ring
@@ -263,13 +247,66 @@ function getIndices(subdivsL, subdivsR) {
     return indices;
 }
 
-// Helper to flatten any given list
-// Good for preparing generated mesh for
-// buffering.
-flatten = list => list.flat(Infinity);
+// Assign colors to vertices
+function generateColors(length, subdivsL, subdivsR, colorList = colors) {
+    let tColors = []; // List of each vertex's color
 
-// Helper to return only positive normals
-absolute = list => list.map(entry => Math.abs(entry));
+    // Get discrete colors
+    let threeColors = colorList.map(color => new THREE.Color(color));
+    const nColors = threeColors.length;
+    const divsPerColor = subdivsL / (nColors - 1);
+
+    // Color change per channel per ring
+    let deltaR = [];
+    let deltaG = [];
+    let deltaB = [];
+    if (nColors === 1) {
+        // No change if only one color
+        deltaR.push(0);
+        deltaG.push(0);
+        deltaB.push(0);
+    }
+    else {
+        for (let i = 0; i < nColors - 1; ++i) {
+            // Compute change on each channel for each pair of colors
+            deltaR.push((threeColors[i].r - threeColors[i+1].r) / divsPerColor);
+            deltaG.push((threeColors[i].g - threeColors[i+1].g) / divsPerColor);
+            deltaB.push((threeColors[i].b - threeColors[i+1].b) / divsPerColor);
+        }
+    }
+
+    let colorDivsUsed = 0; // Number of divs that the current color has been applied to
+    let curColor = 0;      // Index of current color;
+
+    for (let i = 0; i <= subdivsL; ++i) {
+        // Set ring color
+        const newColor = new THREE.Color(threeColors[curColor].r - (deltaR[curColor] * colorDivsUsed),
+                                         threeColors[curColor].g - (deltaG[curColor] * colorDivsUsed),
+                                         threeColors[curColor].b - (deltaB[curColor] * colorDivsUsed));
+        const newColorArr = []; // Color array to flatten and buffer
+        newColor.toArray(newColorArr);
+        for (let r = 0; r < subdivsR; ++r) {
+            tColors.push(newColorArr); // Push adjusted color to each vertex of ring
+        }
+
+        // Switch colors or continue with current color
+        if (colorDivsUsed + 1 > divsPerColor) {
+            ++curColor;
+            colorDivsUsed = 0;
+        }
+        else ++colorDivsUsed;
+    }
+
+    return tColors;
+}
+
+flatten = list => list.flat(Infinity); // Flatten a given list of any depth, shorthand
+
+
+/*
+ *   Scene manipulation
+ */
+
 
 // Initialize lighting
 var light = new THREE.PointLight(0xffffff, 1, 1000);
@@ -301,9 +338,11 @@ function animate() {
 }
 animate();
 
+
 /*
- * Event handlers
+ *  Event handlers - Parameters
  */
+
 
 // Input tunnel length
 function onLengthUpdate() {
@@ -315,11 +354,20 @@ function onLengthUpdate() {
 }
 
 // Input tunnel diameter
-function onDiameterUpdate() {
-    let diameterValue = document.getElementById("diameterValue");
-    const fValue = Math.max(1, parseFloat(diameterValue.value));
-    diameterValue.value = "" + fValue;
-    ringDiameter = fValue;
+function onDiameterUpdate(selection) {
+    if (selection == 1) { // Change initial
+        let startDiameterValue = document.getElementById("startDiameterValue");
+        const fValue = Math.max(1, parseFloat(startDiameterValue.value));
+        startDiameterValue.value = "" + fValue;
+        ringDiameter = fValue;
+    }
+    else {
+        let diameterValue = document.getElementById("endDiameterValue");
+        const fValue = Math.max(1, parseFloat(endDiameterValue.value));
+        endDiameterValue.value = "" + fValue;
+        finalDiameter = fValue;
+    }
+    deltaDiameter = (finalDiameter - ringDiameter) / tunnelSubdivs;
     generate("full");
 }
 
@@ -350,6 +398,26 @@ function onSubdivsLUpdate() {
     tunnelSubdivs = fValue;
     generate("full");
 }
+
+// Input colors
+function onColorsUpdate() {
+    let colorsValue = document.getElementById("colorsValue");
+    let pattern = /(0x[A-F0-9]{6})/gi;
+    let matches;
+    let newColors = [];
+    if ((matches = colorsValue.value.match(pattern)) !== null) {
+        console.log(matches);
+        matches.map(str => newColors.push(parseInt(str)));
+    }
+    if (newColors.length > 0) colors = newColors;
+    generate("colors");
+}
+
+
+/*
+ *   Event handlers - Viewing options
+ */
+
 
 // Toggle between ortho and persp cameras
 function onCameraToggle() {
@@ -395,10 +463,10 @@ function onRotateToggle() {
 // Update axis for auto-rotation
 function onUpdateAxis() {
     let axisValue = document.getElementById("axisValue").value;
-    let format = /\((?<x>-?\d+\.?\d*),\s(?<y>-?\d+\.?\d*),\s(?<z>-?\d+\.?\d*)\)/;
+    let format = /\((-?\d+\.?\d*),\s(-?\d+\.?\d*),\s(-?\d+\.?\d*)\)/;
     if (!format.test(axisValue)) return;
     let matches = format.exec(axisValue);
-    let newAxis = new THREE.Vector3(parseFloat(matches.groups.x), parseFloat(matches.groups.y), parseFloat(matches.groups.z));
+    let newAxis = new THREE.Vector3(parseFloat(matches[0]), parseFloat(matches[1]), parseFloat(matches[2]));
     newAxis.normalize();
     rotationVector = newAxis;
 }
